@@ -1,33 +1,31 @@
-import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { GraphQLError } from 'graphql';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 interface JwtPayload {
   _id: unknown;
   username: string;
-  email: string,
+  email: string;
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+export const authenticateToken = (token: string): JwtPayload => {
+  const secretKey = process.env.JWT_SECRET_KEY || '';
 
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-
-    const secretKey = process.env.JWT_SECRET_KEY || '';
-
-    jwt.verify(token, secretKey, (err, user) => {
-      if (err) {
-        return res.sendStatus(403); // Forbidden
-      }
-
-      req.user = user as JwtPayload;
-      return next();
+  if (!token) {
+    throw new GraphQLError('Authorization token must be provided', {
+      extensions: { code: 'UNAUTHENTICATED' },
     });
-  } else {
-    res.sendStatus(401); // Unauthorized
+  }
+
+  try {
+    const user = jwt.verify(token, secretKey) as JwtPayload;
+    return user;
+  } catch (err) {
+    throw new GraphQLError('Invalid or expired token', {
+      extensions: { code: 'UNAUTHENTICATED' },
+    });
   }
 };
 
