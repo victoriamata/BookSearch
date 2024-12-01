@@ -20,6 +20,8 @@ You can clone this repository onto your local computer. Run the command "npm ins
 ## Usage:
 You can search for any book using the search bar, and the Google API will display all relevant results. By signing up and logging in, you can save books to your collection. Additionally, you have the option to remove any books from your saved list.
 
+[Click here to visit live site!](https://booksearch-mu1l.onrender.com)
+
 ![](./assets/screenshot.png)
 
 ## License:
