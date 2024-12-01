@@ -1,3 +1,5 @@
+// starter code from class assignment
+
 declare namespace Express {
   interface Request {
     user: {
