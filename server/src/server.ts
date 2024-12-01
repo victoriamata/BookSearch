@@ -6,17 +6,19 @@ import { typeDefs, resolvers } from './schemas/index.js';
 import db from './config/connection.js';
 import { authenticateToken } from './utils/auth.js';
 
-// Create a new ApolloServer instance with typeDefs and resolvers
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-});
-
-const startApolloServer = async () => {
+const createServer = async () => {
   // Start Apollo server and establish database connection
-  await server.start();
   await db();
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+  });
+  await server.start();
 
+  return server;
+};
+
+const createApp = (server: ApolloServer) => {
   const app = express();
   const PORT = process.env.PORT || 3001;
 
@@ -25,23 +27,28 @@ const startApolloServer = async () => {
   app.use(express.json());
 
   // Apply Apollo middleware to GraphQL endpoint with authentication context
-  app.use('/graphql', expressMiddleware(server as any,
-    {
-      context: authenticateToken as any
-    }
-  ));
+  app.use('/graphql', expressMiddleware(server, {
+    context: authenticateToken as any,
+  }));
 
   // Serve static assets from the client build directory if in production
-  // if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(process.cwd(), '../client/dist')));
-  // }
+  app.use(express.static(path.join(process.cwd(), '../client/dist')));
 
   // Catch-all route to serve the single-page app
   app.get('*', (_req, res) => {
     res.sendFile(path.join(process.cwd(), '../client/dist/index.html'));
   });
 
+  return app;
+};
+
+const startServer = async () => {
+  // Create Apollo server and Express app
+  const server = await createServer();
+  const app = createApp(server);
+
   // Start the server and log the API endpoint
+  const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => {
     console.log(`API server running on port ${PORT}!`);
     console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
@@ -49,4 +56,4 @@ const startApolloServer = async () => {
 };
 
 // Initialize the server
-startApolloServer();
+startServer();
